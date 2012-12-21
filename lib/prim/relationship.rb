@@ -1,29 +1,36 @@
-require 'prim/helpers'
+# require 'prim/helpers'
+require 'prim/primary'
 
 module Prim
   class Relationship
-    include Prim::Helpers
-    
+    # include Prim::Helpers
+
+    attr_accessor :primary
     attr_reader :reflection, :self_class
     delegate :active_record, :source_reflection, :through_reflection, to: :reflection
 
-    def initialize target_name, self_class, options
+    def initialize association_name, self_class, options = {}
       options = extract_options options
 
       @self_class = self_class
-      @reflection = self_class.reflect_on_association( plural_sym(target_name) )
+      @reflection = self_class.reflect_on_association( association_name )
 
       if reflection.nil?
-        raise ArgumentError("Association '#{ plural_sym(target_name) }' not found \
+        raise ArgumentError("Prim: Association '#{ association_name }' not found \
           on #{ self_class.name }. Perhaps you misspelled it?")
       
       elsif !reflection.collection?
-        raise Prim::SingularAssociationError("Association '#{ plural_sym(target_name) }' \
-         is not a one-to-many or many-to-many relationship, so it can't have a primary.")
+        raise Prim::SingularAssociationError("Prim: Association '#{ association_name }' \
+          is not a one-to-many or many-to-many relationship, so it can't have a primary.")
       end
 
       raise MissingColumnError(missing_column_message) unless reflected_column_names.include?("primary")
-      # ensure the association isn't nested?
+
+      # TODO: ensure the association isn't nested?
+    end
+
+    def primary= record
+      @primary = Primary.new self, record
     end
 
     def source_class
@@ -34,11 +41,11 @@ module Prim
       (through_reflection || source_reflection).klass
     end
 
+    private
+
     def reflected_column_names
       reflected_class.column_names
     end
-
-    private
 
     def mapping_table?
       !!reflection.through_reflection
