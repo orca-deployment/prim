@@ -9,7 +9,7 @@ module Prim
       base.send :extend,  ClassMethods
       base.send :include, InstanceMethods
       
-      base.class_attribute :prim_associations
+      base.class_attribute :prim_relationships
 
       # locale_path = Dir.glob(File.dirname(__FILE__) + "/locales/*.{rb,yml}")
       # I18n.load_path += locale_path unless I18n.load_path.include?(locale_path)
