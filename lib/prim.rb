@@ -26,7 +26,8 @@ module Prim
       Prim.configured_primaries << self.prim_relationships[ singular_name ]
 
       define_method "primary_#{ singular_name }" do
-        primary_for association_name
+        # primary_for association_name
+        collection_for(association_name).primary
       end
 
       define_method "primary_#{ singular_name }=" do |record|

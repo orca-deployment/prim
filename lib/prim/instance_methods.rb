@@ -4,38 +4,45 @@ module Prim
   module InstanceMethods
     include Prim::Helpers
 
-      def primary_for association_name
+    attr_reader :_prim_relationship
 
-      end
+    def primary_for association_name
 
-      def assign_primary singular_name, source_record
-        @_prim_relationship = self.class.prim_relationships[ singular_name ]
-        return false unless source_record.is_a? @_prim_relationship.source_class
+    end
 
-        # You can pass an existing record to promote it to Primary as long as that record
-        # is already a member of the owning class's collection (see Prim::Relationship#collection).
-        if source_record.persisted?
-          if @_prim_relationship.mapping_table?
-            # through_record = source_record.send
-          end
+    def collection_for association_name
+      @_prim_collections ||= {}
+      @_prim_collections[ association_name ] ||= Collection.new(prim_relationships[ singular_sym(association_name) ], self)
+    end
 
-          if false
-            demote_current_primary!
-          else
-            raise Prim::InvalidPrimaryError.new
-          end
+    def assign_primary singular_name, source_record
+      @_prim_relationship = self.class.prim_relationships[ singular_name ]
+      return false unless source_record.is_a? _prim_relationship.source_class
 
-        else
+      # You can pass an existing record to promote it to Primary as long as that record
+      # is already a member of the owning class's collection (see Prim::InstanceMethods#prim_collection).
+      if source_record.persisted?
+        if _prim_relationship.mapping_table?
+          through_record = source_record.send
         end
-      end
 
-      private
+      # Otherwise passing a new record will create a new mapping, but only if there's no
+      # intermediate mapping class (because creating new source records will need more thought).
+      elsif !_prim_relationship.mapping_table?
 
-      def demote_current_primary!
-        collection.where(primary: true).first.try do |record|
-          record.update_column :primary, false
-        end
+      else
+        raise Prim::InvalidPrimaryError.new("source record doesn't exist! can't create source AND mapping records")
       end
+    end
+
+    def prim_collection association_name = nil
+      @prim_collection ||= self.class.send
+        (association_name ? self.class.prim_relationships[ association_name ] : _prim_relationship).collection_method
+    end
+
+    private
+
+    def demote_current_primary!
     end
   end
 end

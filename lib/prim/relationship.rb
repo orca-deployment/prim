@@ -3,8 +3,7 @@
 module Prim
   class Relationship
 
-    attr_writer :primary
-    attr_reader :collection, :reflection, :owning_class, :association_name, :options
+    attr_reader :reflection, :owning_class, :association_name, :options
     delegate :active_record, :source_reflection, :through_reflection, to: :reflection
 
     def initialize association_name, owning_class, options = {}
@@ -21,9 +20,9 @@ module Prim
         raise Prim::SingularAssociationError.new("Prim: Association '#{ association_name }' " +
           "is not a one-to-many or many-to-many relationship, so it can't have a primary.")
 
-      elsif reflected_column_names.include? "primary"
+      elsif !reflected_column_names.include? "primary"
         raise MissingColumnError.new("Prim: #{ owning_class.name } needs #{ reflected_class.name } " +
-          "to have a boolean 'primary' column in order to have primary #{ source_class.name } members.")
+          "to have a boolean 'primary' column in order to have a primary #{ source_class.name }.")
       end
 
       # TODO: ensure the association isn't nested?
@@ -35,17 +34,18 @@ module Prim
         before_destroy :assign_primary
       end
 
+      reflected_class.instance_eval do
+        def primary
+          where(primary: true).first
+        end
+      end
+
       true
     end
 
-    # All current mapping records of this relationship, primary or not.
-    def collection
-      @collection ||= owning_class.send(options[:through] || mapping_reflection.plural_name)
-    end
-
-    # The primary member of this relationship's collection.
-    def primary
-      @primary ||= collection.where(primary: true).first
+    # The association method to call on the owning class to retrieve a record's collection.
+    def collection_method
+      options[:through] || mapping_reflection.plural_name
     end
 
     # The class of the source: i.e. Post if the owning class `has_many :posts`.
@@ -71,7 +71,7 @@ module Prim
         !!reflected_class.reflect_on_all_associations.detect do |refl|
           refl.name == polymorphic_as and refl.association_class == ActiveRecord::Associations::BelongsToPolymorphicAssociation
         end
-      else
+      end
     end
 
     # The name the owning class uses to create mappings in the reflected class; i.e. the
