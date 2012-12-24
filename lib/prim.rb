@@ -20,19 +20,18 @@ module Prim
       association_name = plural_sym(singular_name)
 
       self.prim_relationships = self.prim_relationships.try(:dup) || Hash.new
-      self.prim_relationships[ singular_name ] = Prim::Relationship.new(association_name, self, options)
+      self.prim_relationships[ association_name ] = Prim::Relationship.new(association_name, self, options)
 
       # Store this configuration for global access.
-      Prim.configured_primaries << self.prim_relationships[ singular_name ]
+      Prim.configured_primaries << self.prim_relationships[ association_name ]
 
       define_method "primary_#{ singular_name }" do
-        # primary_for association_name
-        collection_for(association_name).primary
+        primary_for(association_name)
       end
 
       define_method "primary_#{ singular_name }=" do |record|
         # self.class.prim_relationships[ singular_name ].reflected_class.assign_primary
-        assign_primary singular_name, record
+        # assign_primary singular_name, record
       end
     end
   end

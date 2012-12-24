@@ -1,10 +1,12 @@
-# require 'prim/instance_methods'
-
 module Prim
+  # This class largely wraps ActiveRecord::Reflection::MacroReflection and its subclasses.
+  # A Relationship encapsulates the interaction among the two or three classes involved in
+  # a one-to-many or many-to-many model association, and reconfigures these classes to
+  # make handling primary members of those associations simple.
   class Relationship
 
     attr_reader :reflection, :owning_class, :association_name, :options
-    delegate :active_record, :source_reflection, :through_reflection, to: :reflection
+    delegate :source_reflection, :through_reflection, to: :reflection
 
     def initialize association_name, owning_class, options = {}
       @options = extract_options options
@@ -17,7 +19,7 @@ module Prim
           "on #{ owning_class.name }. Perhaps you misspelled it?")
       
       elsif !reflection.collection?
-        raise Prim::SingularAssociationError.new("Prim: Association '#{ association_name }' " +
+        raise SingularAssociationError.new("Prim: Association '#{ association_name }' " +
           "is not a one-to-many or many-to-many relationship, so it can't have a primary.")
 
       elsif !reflected_column_names.include? "primary"
@@ -28,15 +30,17 @@ module Prim
       # TODO: ensure the association isn't nested?
 
       # reflected_class.send :include, InstanceMethods::Reflected
+      # TODO: change this from an class_eval to an included module
       reflected_class.class_eval do
         before_create  :assign_primary
         before_update  :assign_primary
         before_destroy :assign_primary
       end
 
+      # TODO: change this from an instance_eval to an extended module
       reflected_class.instance_eval do
         def primary
-          where(primary: true).first
+          includes().where(primary: true).first
         end
       end
 

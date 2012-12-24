@@ -1,18 +1,17 @@
 require 'prim/helpers'
+require 'prim/collection'
 
 module Prim
   module InstanceMethods
     include Prim::Helpers
 
-    attr_reader :_prim_relationship
-
     def primary_for association_name
-
+      collection_for(association_name).primary
     end
 
     def collection_for association_name
       @_prim_collections ||= {}
-      @_prim_collections[ association_name ] ||= Collection.new(prim_relationships[ singular_sym(association_name) ], self)
+      @_prim_collections[ association_name ] ||= Prim::Collection.new(prim_relationships[ singular_sym(association_name) ], self)
     end
 
     def assign_primary singular_name, source_record
@@ -33,16 +32,6 @@ module Prim
       else
         raise Prim::InvalidPrimaryError.new("source record doesn't exist! can't create source AND mapping records")
       end
-    end
-
-    def prim_collection association_name = nil
-      @prim_collection ||= self.class.send
-        (association_name ? self.class.prim_relationships[ association_name ] : _prim_relationship).collection_method
-    end
-
-    private
-
-    def demote_current_primary!
     end
   end
 end
