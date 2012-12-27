@@ -6,7 +6,7 @@ module Prim
   class Relationship
 
     attr_reader :reflection, :owning_class, :association_name, :options
-    delegate :source_reflection, :through_reflection, to: :reflection
+    delegate :source_reflection, :through_reflection, :foreign_key, to: :reflection
 
     def initialize association_name, owning_class, options = {}
       @options = extract_options options
@@ -23,28 +23,38 @@ module Prim
           "is not a one-to-many or many-to-many relationship, so it can't have a primary.")
 
       elsif !reflected_column_names.include? "primary"
-        raise MissingColumnError.new("Prim: #{ owning_class.name } needs #{ reflected_class.name } " +
-          "to have a boolean 'primary' column in order to have a primary #{ source_class.name }.")
+        raise MissingColumnError.new("Prim: #{ owning_class.name } needs table " +
+          "`#{ mapping_reflection.table_name }` to have a boolean 'primary' column in " +
+          "order to have a primary #{ source_class.name }.")
       end
 
       # TODO: ensure the association isn't nested?
 
-      # reflected_class.send :include, InstanceMethods::Reflected
-      # TODO: change this from an class_eval to an included module
-      reflected_class.class_eval do
-        before_create  :assign_primary
-        before_update  :assign_primary
-        before_destroy :assign_primary
-      end
-
-      # TODO: change this from an instance_eval to an extended module
-      reflected_class.instance_eval do
-        def primary
-          includes().where(primary: true).first
-        end
-      end
+      configure_reflected_class!
 
       true
+    end
+
+    def configure_reflected_class!
+      foreign_key  = mapping_reflection.foreign_key
+      mapping_type = mapping_reflection.type
+
+      load_siblings = lambda do
+        primary_key = self.class.primary_key
+        query = self.class.where( foreign_key => self[ foreign_key ] )
+
+        if mapping_type
+          query = query.where( mapping_type => self[ mapping_type ] )
+        end
+
+        query.where( self.class.arel_table[ primary_key ].not_eq(self[ primary_key ]) )
+      end
+
+      reflected_class.class_eval do
+        define_method :siblings, &load_siblings
+      end
+
+      reflected_class.send :include, InstanceMethods::Reflected
     end
 
     # The association method to call on the owning class to retrieve a record's collection.
@@ -52,7 +62,7 @@ module Prim
       options[:through] || mapping_reflection.plural_name
     end
 
-    # The class of the source: i.e. Post if the owning class `has_many :posts`.
+    # The class of the reflection source: i.e. Post if the owning class `has_many :posts`.
     def source_class
       source_reflection.klass
     end
@@ -70,23 +80,23 @@ module Prim
 
     # True if the `mapping_reflection` class has an "inverse" mapping back to the owning
     # class with a matching name. Verifies that a polymorphic mapping exists.
-    def polymorphic_mapping?
-      if polymorphic_as.present?
-        !!reflected_class.reflect_on_all_associations.detect do |refl|
-          refl.name == polymorphic_as and refl.association_class == ActiveRecord::Associations::BelongsToPolymorphicAssociation
-        end
-      end
-    end
+    # def polymorphic_mapping?
+    #   if polymorphic_as.present?
+    #     !!reflected_class.reflect_on_all_associations.detect do |refl|
+    #       refl.name == polymorphic_as and refl.association_class == ActiveRecord::Associations::BelongsToPolymorphicAssociation
+    #     end
+    #   end
+    # end
 
     # The name the owning class uses to create mappings in the reflected class; i.e. the
     # `:as` option set on the `has_many` association in the owner.
-    def reflection_polymorphic_as
-      mapping_reflection.options[:as].to_sym
-    end
+    # def reflection_polymorphic_as
+    #   mapping_reflection.options[:as].to_sym
+    # end
 
     # True if this relationship relies on a mapping table for `primary` records.
     def mapping_table?
-      !!reflection.through_reflection
+      !!through_reflection
     end
 
     private

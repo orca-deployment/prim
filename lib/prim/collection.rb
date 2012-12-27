@@ -11,42 +11,65 @@ module Prim
     attr_reader :instance, :relationship, :members
 
     def initialize relationship, instance
-      @instance = instance
-      @relationship = relationship      
+      @instance     = instance
+      @relationship = relationship
     end
 
     def primary
-      reload_collection!
-      members.primary
+      sources.where( relationship.through_reflection.name => { primary: true } ).first
     end
 
     def primary= source_record
-      # reload_collection!
+      mapping = mapping_for(source_record)
 
-      # check if this record is already primary
-      # 
-      
-      if mapping = mapping_for(source_record)
-        if mapping.primary?
-          return true
-        else
-          demote_current_primary!
+      if source_record.persisted?
+        if mapping.nil?
+          create_mapping!(source_record)
+
+        elsif !mapping.primary?
+          mapping.update_attributes(primary: true)
         end
+
+      else
+        create_source_record!(source_record)
       end
 
+      true
     end
 
     private
 
-    def reload_collection!
-      @members = instance.send( relationship.collection_method )
+    # Creates a new source record and a mapping between it and the owner instance.
+    def create_source_record! source_record
+      if source_record.save
+        create_mapping!(source_record)
+      else
+        false
+      end
     end
 
+    def create_mapping! source_record
+      mappings.create( relationship.foreign_key => source_record.id, primary: true )
+    end
+
+    def mappings force_reload = false
+      instance.send( relationship.collection_method, force_reload )
+    end
+
+    def sources force_reload = false
+      instance.send( relationship.association_name, force_reload )
+    end
+
+    # Returns the mapping for a given source record. If this Relationship doesn't
+    # involve a mapping table, returns the source record itself.
     def mapping_for source_record
       if relationship.mapping_table?
-        members.detect do |member|
-          member[ reflection.source_reflection.foreign_key ] == source_record.id
+        mappings.detect do |member|
+          member[ relationship.source_reflection.foreign_key ] == source_record.id
         end
+
+      else
+        source_record
       end
     end
   end
