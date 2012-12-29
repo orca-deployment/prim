@@ -32,9 +32,13 @@ end
 
 Great! Now let's say we've added a specific set of Languages. Our Users can now have new Language associations by simply creating a record in the `user_languages` mapping table, relating a User and a Language. But what if we want to know which of a User's Languages is their most important? Well, we could add a `sort_order` or `primary` column to the `user_languages` table, but then we'll need to write code to manage it all.
 
-Enter __Prim__.
+Enter __Prim__. Add
 
-With __Prim__ we can just add a line of code to the User model...
+```ruby
+gem 'prim'
+```
+
+to your Gemfile. With __Prim__ we can just add a line of code to the User model...
 
 ```ruby
 class User < ActiveRecord::Base
