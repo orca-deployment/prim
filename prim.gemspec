@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "prim"
-  s.version     = "0.0.2"
+  s.version     = "0.0.3"
   s.date        = "2012-12-19"
   s.summary     = "Easily manage Rails associations that need a primary member."
   s.description = "With Prim it's easy to add a primary member to any one-to-many or many-to-many association. " +
@@ -9,6 +9,8 @@ Gem::Specification.new do |s|
   s.email       = "piers@impossibly.org"
   s.files       = `git ls-files`.split("\n")
   s.homepage    = "https://github.com/orcahealth/prim"
+
+  s.add_dependency "activerecord", "~> 3.2.0"
 
   s.require_paths = [ "lib" ]
 end
