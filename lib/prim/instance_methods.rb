@@ -23,15 +23,17 @@ module Prim
       extend ActiveSupport::Concern
 
       included do
-
         validate :only_one_primary
+      end
 
-        def only_one_primary
-          if self[:primary]
-            siblings.update_all('"primary" = false')
-          end
+      def only_one_primary
+        if self[:primary]
+          siblings.update_all('"primary" = false')
         end
+      end
 
+      def siblings
+        prim_collection.siblings_for self
       end
     end
 

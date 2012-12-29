@@ -15,6 +15,7 @@ module Prim
   module ClassMethods
     include Prim::Helpers
 
+    # TODO: allow multiple singular names in one call.
     def has_primary name, options = {}
       singular_name    = name.to_sym
       association_name = plural_sym(singular_name)
@@ -36,5 +37,5 @@ module Prim
   end
 
   class SingularAssociationError < StandardError; end
-  class MissingColumnError < StandardError; end
+  class InvalidPrimaryColumnError < StandardError; end
 end

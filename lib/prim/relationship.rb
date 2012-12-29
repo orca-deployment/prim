@@ -9,52 +9,32 @@ module Prim
     delegate :source_reflection, :through_reflection, :foreign_key, to: :reflection
 
     def initialize association_name, owning_class, options = {}
-      @options = extract_options options
+      @options = options
       @association_name = association_name
       @owning_class = owning_class
       @reflection   = owning_class.reflect_on_association( association_name )
 
+      # TODO: remove these exceptions and replace with logged errors? hmm.
       if reflection.nil?
-        raise ArgumentError.new("Prim: Association '#{ association_name }' not found " +
+        raise ArgumentError.new("Association '#{ association_name }' not found " +
           "on #{ owning_class.name }. Perhaps you misspelled it?")
       
       elsif !reflection.collection?
-        raise SingularAssociationError.new("Prim: Association '#{ association_name }' " +
+        raise SingularAssociationError.new("Association '#{ association_name }' " +
           "is not a one-to-many or many-to-many relationship, so it can't have a primary.")
 
-      elsif !reflected_column_names.include? "primary"
-        raise MissingColumnError.new("Prim: #{ owning_class.name } needs table " +
-          "`#{ mapping_reflection.table_name }` to have a boolean 'primary' column in " +
-          "order to have a primary #{ source_class.name }.")
+      elsif !primary_column
+        # TODO: add a generator to automatically create a migration, then change this
+        # message to give users the exact instruction needed.
+        raise InvalidPrimaryColumnError.new("#{ owning_class.name } needs table " +
+          "`#{ mapping_reflection.table_name }` to have a boolean 'primary' column " +
+          "in order to have a primary #{ source_class.name }.")
       end
 
       # TODO: ensure the association isn't nested?
 
-      configure_reflected_class!
-
-      true
-    end
-
-    def configure_reflected_class!
-      foreign_key  = mapping_reflection.foreign_key
-      mapping_type = mapping_reflection.type
-
-      load_siblings = lambda do
-        primary_key = self.class.primary_key
-        query = self.class.where( foreign_key => self[ foreign_key ] )
-
-        if mapping_type
-          query = query.where( mapping_type => self[ mapping_type ] )
-        end
-
-        query.where( self.class.arel_table[ primary_key ].not_eq(self[ primary_key ]) )
-      end
-
-      reflected_class.class_eval do
-        define_method :siblings, &load_siblings
-      end
-
       reflected_class.send :include, InstanceMethods::Reflected
+      reflected_class.class_attribute :prim_collection
     end
 
     # The association method to call on the owning class to retrieve a record's collection.
@@ -78,22 +58,6 @@ module Prim
       through_reflection || source_reflection
     end
 
-    # True if the `mapping_reflection` class has an "inverse" mapping back to the owning
-    # class with a matching name. Verifies that a polymorphic mapping exists.
-    # def polymorphic_mapping?
-    #   if polymorphic_as.present?
-    #     !!reflected_class.reflect_on_all_associations.detect do |refl|
-    #       refl.name == polymorphic_as and refl.association_class == ActiveRecord::Associations::BelongsToPolymorphicAssociation
-    #     end
-    #   end
-    # end
-
-    # The name the owning class uses to create mappings in the reflected class; i.e. the
-    # `:as` option set on the `has_many` association in the owner.
-    # def reflection_polymorphic_as
-    #   mapping_reflection.options[:as].to_sym
-    # end
-
     # True if this relationship relies on a mapping table for `primary` records.
     def mapping_table?
       !!through_reflection
@@ -101,13 +65,8 @@ module Prim
 
     private
 
-    # The columns of the reflected class (where `primary` needs to be).
-    def reflected_column_names
-      reflected_class.column_names
-    end
-
-    def extract_options options
-      options
+    def primary_column
+      reflected_class.columns.find { |col| col.name == "primary" }
     end
   end
 end

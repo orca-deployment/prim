@@ -13,6 +13,9 @@ module Prim
     def initialize relationship, instance
       @instance     = instance
       @relationship = relationship
+
+      # Attach this collection to the mapping class so it has access to static methods.
+      relationship.reflected_class.prim_collection = self
     end
 
     def primary
@@ -35,6 +38,18 @@ module Prim
       end
 
       true
+    end
+
+    def siblings_for mapping
+      foreign_key   = relationship.mapping_reflection.foreign_key
+      mapping_type  = relationship.mapping_reflection.type
+      mapping_class = relationship.reflected_class
+      primary_key   = mapping_class.primary_key
+
+      query = relationship.reflected_class.where( foreign_key => mapping[ foreign_key ] )
+      query = query.where( mapping_type => mapping[ mapping_type ] ) unless mapping_type.nil?
+
+      query.where( mapping_class.arel_table[ primary_key ].not_eq( mapping[ primary_key ] ) )
     end
 
     private
