@@ -49,7 +49,7 @@ end
 ```ruby
 class AddPrimaryToUserLanguages < ActiveRecord::Migration
   def change
-    add_column :user_languages, :primary, :boolean, default: false
+    add_column :user_languages, :primary, :boolean, { default: false }
   end
 end
 ```
@@ -66,3 +66,9 @@ User.first.primary_language = Language.where( name: "English" )
 User.first.primary_language
 => #<Language id: 5, name: "English" ... >
 ```
+
+Contributing
+------------
+
+Want to contribute? Find a TODO or [Github issue](https://github.com/OrcaHealth/prim/issues) and take care of it! Or suggest a feature or file a bug on the [issues page](https://github.com/OrcaHealth/prim/issues). Just pack up your commits by rebasing them, then submit a pull request!
+
