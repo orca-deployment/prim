@@ -1,7 +1,7 @@
 module Prim
   # Collection largely wraps an association collection (like a Relation) but adds
   # the concept of a primary member. Collections can only exist in the context of
-  # a Relationship (see Prim::Relationship for more info) and an `owner` instance,
+  # a Relationship (see Prim::Relationship for more info) and an "owning" `instance`,
   # and contain mapping records.
   class Collection
 
@@ -68,7 +68,7 @@ module Prim
     end
 
     def mappings force_reload = false
-      instance.send( relationship.collection_method, force_reload )
+      instance.send( relationship.collection_label, force_reload )
     end
 
     def sources force_reload = false

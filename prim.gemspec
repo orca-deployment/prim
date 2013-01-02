@@ -10,7 +10,8 @@ Gem::Specification.new do |s|
   s.files       = `git ls-files`.split("\n")
   s.homepage    = "https://github.com/orcahealth/prim"
 
-  s.add_dependency "activerecord", "~> 3.2.0"
+  s.add_dependency "activerecord",  "~> 3.2.0"
+  s.add_dependency "activesupport", "~> 3.2.0"
 
   s.require_paths = [ "lib" ]
 end

@@ -27,11 +27,11 @@ module Prim
       Prim.configured_primaries << self.prim_relationships[ singular_name ]
 
       define_method "primary_#{ singular_name }" do
-        get_primary(singular_name)
+        prim_collection_for(singular_name).primary
       end
 
-      define_method "primary_#{ singular_name }=" do |record|
-        assign_primary(singular_name, record)
+      define_method "primary_#{ singular_name }=" do |instance|
+        prim_collection_for(singular_name).primary = instance
       end
     end
   end

@@ -34,17 +34,19 @@ module Prim
       # TODO: ensure the association isn't nested?
 
       reflected_class.send :include, InstanceMethods::Reflected
-      reflected_class.class_attribute :prim_collection
+      reflected_class.class_attribute :prim_relationship
+
+      source_class.send :include, InstanceMethods::Source if mapping_table?
     end
 
     # The association method to call on the owning class to retrieve a record's collection.
-    def collection_method
+    def collection_label
       options[:through] || mapping_reflection.plural_name
     end
 
     # The class of the reflection source: i.e. Post if the owning class `has_many :posts`.
     def source_class
-      source_reflection.klass
+      reflection.klass
     end
 
     # The class of the `mapping_reflection`.
@@ -55,7 +57,7 @@ module Prim
     # The association reflection representing the link between the owning class and the
     # mapping class, whether or not the mapping class represents a join-table.
     def mapping_reflection
-      through_reflection || source_reflection
+      through_reflection || reflection
     end
 
     # True if this relationship relies on a mapping table for `primary` records.
