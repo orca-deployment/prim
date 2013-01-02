@@ -71,6 +71,15 @@ User.first.primary_language
 => #<Language id: 5, name: "English" ... >
 ```
 
+
+Notes
+-----
+
+* Currently only supports ActiveRecord with an SQL data store like PostgreSQL, MySQL, or MariaDB. More support coming soon.
+* Primary management is automatically added to subclasses of ActiveRecord::Base, so your data models need to inherit from that.
+* At the very least Prim requires ActiveRecord 3.2 and ActiveSupport 3.2.
+
+
 Contributing
 ------------
 

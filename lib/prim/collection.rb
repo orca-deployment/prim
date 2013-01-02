@@ -1,3 +1,5 @@
+require 'active_support/core_ext/object/try'
+
 module Prim
   # Collection largely wraps an association collection (like a Relation) but adds
   # the concept of a primary member. Collections can only exist in the context of
