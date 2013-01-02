@@ -14,14 +14,20 @@ module Prim
       @instance     = instance
       @relationship = relationship
 
-      # Attach this collection to the mapping class so it has access to static methods.
-      relationship.reflected_class.prim_collection = self
+      # Attach the relationship to the mapping class.
+      relationship.reflected_class.prim_relationship = relationship
     end
 
+    # Loads the primary member of this collection.
     def primary
-      sources.where( relationship.through_reflection.name => { primary: true } ).first
+      sources.where( relationship.collection_label => { primary: true } ).first.try do |record|
+        record.primary = true
+        record
+      end
     end
 
+    # Sets the primary member of this collection. Requires a `source_record` to
+    # be passed (i.e. a Tag if Post `has_many :tags, through: :taggings`).
     def primary= source_record
       mapping = mapping_for(source_record)
 
@@ -38,18 +44,6 @@ module Prim
       end
 
       true
-    end
-
-    def siblings_for mapping
-      foreign_key   = relationship.mapping_reflection.foreign_key
-      mapping_type  = relationship.mapping_reflection.type
-      mapping_class = relationship.reflected_class
-      primary_key   = mapping_class.primary_key
-
-      query = relationship.reflected_class.where( foreign_key => mapping[ foreign_key ] )
-      query = query.where( mapping_type => mapping[ mapping_type ] ) unless mapping_type.nil?
-
-      query.where( mapping_class.arel_table[ primary_key ].not_eq( mapping[ primary_key ] ) )
     end
 
     private
