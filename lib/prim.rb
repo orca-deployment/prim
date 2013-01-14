@@ -26,6 +26,8 @@ module Prim
       # Store this configuration for global access.
       Prim.configured_primaries << self.prim_relationships[ singular_name ]
 
+      # Create dynamic methods for getting and setting the
+      # primary Collection member.
       define_method "primary_#{ singular_name }" do
         prim_collection_for(singular_name).primary
       end
@@ -34,6 +36,8 @@ module Prim
         prim_collection_for(singular_name).primary = instance
       end
 
+      # We alias the association's method chain so the original can be accessed.
+      # IS THIS IMPORTANT?!
       define_method "#{ association_name }_with_primaries" do
         prim_collection_for(singular_name).all
       end

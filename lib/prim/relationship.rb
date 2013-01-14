@@ -35,6 +35,7 @@ module Prim
 
       reflected_class.send :include, InstanceMethods::Reflected
       reflected_class.class_attribute :prim_relationship
+      reflected_class.prim_relationship = self
 
       source_class.send :include, InstanceMethods::Source if mapping_table?
     end
