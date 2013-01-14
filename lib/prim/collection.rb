@@ -28,6 +28,9 @@ module Prim
     # Sets the primary member of this collection. Requires a `source_record` to
     # be passed (i.e. a Tag if Post `has_many :tags, through: :taggings`).
     def primary= source_record
+      # Ensure what's passed can be set as the primary.
+      return true unless source_record.is_a? relationship.source_class
+
       mapping = mapping_for(source_record)
 
       if source_record.persisted?
