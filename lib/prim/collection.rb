@@ -15,9 +15,6 @@ module Prim
     def initialize relationship, instance
       @instance     = instance
       @relationship = relationship
-
-      # Attach the relationship to the mapping class.
-      relationship.reflected_class.prim_relationship = relationship
     end
 
     # Loads the primary member of this collection.
