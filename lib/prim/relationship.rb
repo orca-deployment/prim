@@ -42,7 +42,7 @@ module Prim
 
     # The association method to call on the owning class to retrieve a record's collection.
     def collection_label
-      options[:through] || mapping_reflection.plural_name
+      (options[:through] || mapping_reflection.plural_name).to_sym
     end
 
     # The class of the reflection source: i.e. Post if the owning class `has_many :posts`.
