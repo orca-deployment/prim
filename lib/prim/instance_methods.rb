@@ -25,6 +25,8 @@ module Prim
       def only_one_primary
         if self[:primary]
           siblings.update_all('"primary" = false')
+        elsif siblings.where( primary: true ).first.nil?
+          self[:primary] = true
         end
       end
 

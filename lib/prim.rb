@@ -33,6 +33,12 @@ module Prim
       define_method "primary_#{ singular_name }=" do |instance|
         prim_collection_for(singular_name).primary = instance
       end
+
+      define_method "#{ association_name }_with_primaries" do
+        prim_collection_for(singular_name).all
+      end
+
+      alias_method_chain association_name, :primaries
     end
   end
 

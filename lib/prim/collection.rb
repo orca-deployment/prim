@@ -48,6 +48,20 @@ module Prim
       true
     end
 
+    def all options = {}
+      options[:with_primaries] ||= true
+
+      if options[:with_primaries]
+        primary_member = primary
+        sources.tap do |records|
+          records.find { |r| r == primary_member }.try(:primary=, true)
+          records
+        end
+      else
+        sources
+      end
+    end
+
     private
 
     # Creates a new source record and a mapping between it and the owner instance.
@@ -63,12 +77,12 @@ module Prim
       mappings.create( relationship.foreign_key => source_record.id, primary: true )
     end
 
-    def mappings force_reload = false
-      instance.send( relationship.collection_label, force_reload )
+    def mappings
+      instance.association( relationship.collection_label ).proxy
     end
 
-    def sources force_reload = false
-      instance.send( relationship.association_name, force_reload )
+    def sources
+      instance.association( relationship.association_name ).proxy
     end
 
     # Returns the mapping for a given source record. If this Relationship doesn't

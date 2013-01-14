@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "prim"
-  s.version     = "0.0.4"
+  s.version     = "0.0.5"
   s.date        = "2013-01-02"
   s.summary     = "Easily manage Rails associations that need a primary member."
   s.description = "With Prim it's easy to add a primary member to any one-to-many or many-to-many association. " +
